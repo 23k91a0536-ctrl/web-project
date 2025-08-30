@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Study Mate - AI PDF Q&A</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      padding: 10px;
+      margin: 10px 0;
+      width: 300px;
+    }
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+
+    #answer {
+      margin-top: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 80%;
+    }
+
+    #status {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>📘 Study Mate</h1>
+
+  <!-- Upload PDF Section -->
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label><strong>Upload your PDF:</strong></label><br />
+    <input type="file" name="pdf" accept=".pdf" required />
+    <button type="submit">Upload</button>
+    <p id="status">Please upload a PDF to begin.</p>
+  </form>
+
+  <!-- Ask a Question Section (always visible) -->
+  <div id="qaSection">
+    <h2>Ask a question about your uploaded PDF</h2>
+    <input type="text" id="questionInput" placeholder="Type your question..." disabled />
+    <button id="askBtn" disabled>Ask</button>
+    <p id="answer"></p>
+  </div>
+
+  <script>
+    let pdfText = "";
+
+    // Upload handler
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+
+      document.getElementById('status').textContent = 'Uploading and processing PDF...';
+
+      const res = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        pdfText = data.text;
+        document.getElementById('questionInput').disabled = false;
+        document.getElementById('askBtn').disabled = false;
+        document.getElementById('status').textContent = '✅ PDF uploaded successfully. Ask your question below.';
+      } else {
+        document.getElementById('status').textContent = '❌ Failed to process PDF.';
+      }
+    });
+
+    // Ask Question handler
+    document.getElementById('askBtn').addEventListener('click', async () => {
+      const question = document.getElementById('questionInput').value.trim();
+      if (!question) return;
+
+      document.getElementById('answer').textContent = 'Thinking...';
+
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, pdfText })
+      });
+
+      const data = await res.json();
+      document.getElementById('answer').textContent = data.answer || 'No answer found.';
+    });
+  </script>
+</body>
+</html>
